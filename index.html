@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>vitamed – วิตามินและอาหารเสริม</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#16302b;--g:#1f7a5c;--o:#f08a00;--bg:#f4f8f6;--l:#d9e5e0;--w:#fff}
+*{box-sizing:border-box}body{margin:0;font:16px/1.6 Prompt,system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+a{color:var(--g)}header{background:var(--ink);color:#fff;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:12px 5vw}
+header a{color:#fff;text-decoration:none}.brand{font-size:26px;font-weight:700;margin-right:auto}.brand b{color:var(--o)}
+main{max-width:1000px;margin:auto;padding:24px 5vw 60px}h1{font-size:28px;margin:.2em 0 .6em}h2{font-size:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.card{background:var(--w);border:1px solid var(--l);border-radius:14px;padding:16px}.card .em{font-size:56px;text-align:center}
+.pr{font-weight:700;color:var(--g)}.mut{color:#6b7f79;font-size:14px}
+button,.btn{background:var(--g);color:#fff;border:0;border-radius:8px;padding:8px 16px;font:inherit;cursor:pointer;text-decoration:none;display:inline-block}
+button.o{background:var(--o)}button.s{background:#e6eeea;color:var(--ink)}button.d{background:#b3392f}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--o)}
+input,select,textarea{font:inherit;padding:8px 10px;border:1px solid #b9cbc4;border-radius:8px;width:100%;background:#fff}
+label{display:block;margin:10px 0 4px;font-weight:500}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1 1 auto;width:auto}
+.chip{background:#e6eeea;color:var(--ink);padding:5px 14px;border-radius:99px}.chip.on{background:var(--ink);color:#fff}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden}th,td{padding:9px 10px;border-bottom:1px solid var(--l);text-align:left;font-size:15px}th{background:#e6eeea}
+.wrap{overflow-x:auto}.low{color:#b3392f;font-weight:700}.box{max-width:420px}.tag{padding:2px 10px;border-radius:99px;background:#fde8c8;font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}.stats .card b{font-size:26px;display:block}
+.bars{display:flex;gap:10px;align-items:flex-end;height:140px}.bars div{flex:1;text-align:center;font-size:12px}.bars i{display:block;background:var(--o);border-radius:6px 6px 0 0;min-height:2px}
+#t{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:10px;display:none;z-index:9}
+@media(prefers-reduced-motion:no-preference){.card{transition:box-shadow .15s}.card:hover{box-shadow:0 4px 14px #16302b22}}
+</style></head><body>
+<header><a class="brand" href="#/">vita<b>med</b></a><nav id="nav" class="row"></nav></header>
+<main id="app"></main><div id="t" role="status"></div>
+<script>
+const E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),$=s=>document.querySelector(s),M=n=>'฿'+Number(n).toLocaleString('th-TH');
+const sha=async s=>crypto.subtle?[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join(''):btoa(s);
+const ST={pending:'รอชำระ',shipping:'กำลังจัดส่ง',done:'สำเร็จ',cancel:'ยกเลิก'},CATS=['วิตามิน','แร่ธาตุ','อาหารเสริม'];
+const ld=(k,d)=>{try{return JSON.parse(localStorage[k])??d}catch{return d}};
+let db=ld('vm_db',null),cart=ld('vm_cart',{}),me=null,q='',cat='';
+const sv=()=>{localStorage.vm_db=JSON.stringify(db);localStorage.vm_cart=JSON.stringify(cart)};
+const toast=t=>{const e=$('#t');e.textContent=t;e.style.display='block';clearTimeout(toast.i);toast.i=setTimeout(()=>e.style.display='none',2500)};
+const P=[['วิตามินซี 1000 มก.',0,259,40,10,'🍊','เสริมภูมิคุ้มกัน ลดความเหนื่อยล้า'],['วิตามินดี3 2000 IU',0,320,25,8,'☀️','บำรุงกระดูกและฟัน'],['วิตามินบีรวม',0,290,30,10,'💊','ช่วยระบบเผาผลาญพลังงาน'],['วิตามินอี 400 IU',0,350,18,6,'🌻','ต้านอนุมูลอิสระ บำรุงผิว'],['วิตามินเอ',0,240,22,6,'🥕','บำรุงสายตา'],['แคลเซียม + แมกนีเซียม',1,380,35,10,'🦴','เสริมกระดูกและกล้ามเนื้อ'],['ซิงค์ 15 มก.',1,210,50,12,'🛡️','ช่วยภูมิคุ้มกันและผิวพรรณ'],['ธาตุเหล็ก',1,230,15,8,'🩸','ช่วยลดอาการอ่อนเพลีย'],['น้ำมันปลา โอเมก้า-3',2,490,28,10,'🐟','บำรุงหัวใจและสมอง'],['คอลลาเจนไดเปปไทด์',2,690,12,6,'✨','บำรุงผิวและข้อต่อ'],['โปรไบโอติกส์',2,550,20,8,'🦠','ปรับสมดุลระบบทางเดินอาหาร'],['แปะก๊วยสกัด',2,420,9,10,'🍃','บำรุงความจำ']];
+async function init(){if(!db){db={users:[{id:1,name:'ผู้ดูแลระบบ',email:'admin@vitamed.com',pw:await sha('admin123'),role:'admin',addrs:[]}],products:P.map((p,i)=>({id:i+1,name:p[0],cat:CATS[p[1]],price:p[2],stock:p[3],low:p[4],em:p[5],desc:p[6]})),orders:[],seq:{u:2,p:13,o:1}};sv()}
+me=db.users.find(u=>u.id==localStorage.vm_me)||null;R()}
+const need=(c)=>c?true:(location.hash='#/login',false);
+function nav(){const n=Object.values(cart).reduce((a,b)=>a+b,0);$('#nav').innerHTML=`<a href="#/">สินค้า</a><a href="#/cart">ตะกร้า (${n})</a>`+(me?(me.role=='admin'?'<a href="#/admin">แดชบอร์ด</a><a href="#/admin/inv">สต็อก</a><a href="#/admin/orders">ออเดอร์</a>':'<a href="#/orders">คำสั่งซื้อ</a>')+`<a href="#/profile">${E(me.name)}</a><a href="#" data-a="out">ออกจากระบบ</a>`:'<a href="#/login">เข้าสู่ระบบ</a><a href="#/register">สมัครสมาชิก</a>')}
+const pf=id=>db.products.find(p=>p.id==id);
+const list=()=>{const r=db.products.filter(p=>(!cat||p.cat==cat)&&p.name.toLowerCase().includes(q.toLowerCase()));return r.length?r.map(p=>`<div class="card"><div class="em">${p.em}</div><h2><a href="#/p/${p.id}">${E(p.name)}</a></h2><div class="pr">${M(p.price)}</div><div class="mut">${p.stock>0?'เหลือ '+p.stock+' ชิ้น':'สินค้าหมด'}</div><p><button data-a="add" data-id="${p.id}" ${p.stock<1?'disabled':''}>ใส่ตะกร้า</button></p></div>`).join(''):'<p>ไม่พบสินค้า ลองเปลี่ยนคำค้นหาหรือหมวดหมู่</p>'};
+const V={
+'':()=>`<h1>วิตามินและอาหารเสริม</h1><div class="row"><input id="q" placeholder="ค้นหาชื่อสินค้า" value="${E(q)}" aria-label="ค้นหา"></div><p class="row" id="cats">${['',...CATS].map(c=>`<button class="chip ${cat==c?'on':''}" data-a="cat" data-v="${c}">${c||'ทั้งหมด'}</button>`).join('')}</p><div class="grid" id="list">${list()}</div>`,
+p:i=>{const p=pf(i);return p?`<a href="#/">← กลับ</a><div class="card box"><div class="em">${p.em}</div><h1>${E(p.name)}</h1><p>${E(p.desc)}</p><p class="mut">หมวด ${p.cat} · ${p.stock>0?'เหลือ '+p.stock:'หมด'}</p><p class="pr">${M(p.price)}</p><button data-a="add" data-id="${p.id}" ${p.stock<1?'disabled':''}>ใส่ตะกร้า</button></div>`:'ไม่พบสินค้า'},
+login:()=>`<h1>เข้าสู่ระบบ</h1><form data-f="login" class="box"><label>อีเมล</label><input name="email" type="email" required><label>รหัสผ่าน</label><input name="pw" type="password" required><p><button>เข้าสู่ระบบ</button></p></form>`,
+register:()=>`<h1>สมัครสมาชิก</h1><form data-f="reg" class="box"><label>ชื่อ</label><input name="name" required><label>อีเมล</label><input name="email" type="email" required><label>รหัสผ่าน (6 ตัวขึ้นไป)</label><input name="pw" type="password" minlength="6" required><p><button>สมัครสมาชิก</button></p></form>`,
+profile:()=>!me?'':`<h1>โปรไฟล์</h1><form data-f="prof" class="box"><label>ชื่อ</label><input name="name" value="${E(me.name)}" required><p class="mut">${E(me.email)} · ${me.role}</p><button>บันทึกชื่อ</button></form><h2>ที่อยู่จัดส่ง</h2>${me.addrs.map((a,i)=>`<p class="card">${E(a)} <button class="d" data-a="deladdr" data-id="${i}">ลบ</button></p>`).join('')||'<p class="mut">ยังไม่มีที่อยู่</p>'}<form data-f="addr" class="box"><textarea name="a" rows="2" placeholder="ที่อยู่เต็ม" required></textarea><p><button>เพิ่มที่อยู่</button></p></form>`,
+cart:()=>{const it=Object.entries(cart).map(([id,n])=>[pf(id),n]).filter(x=>x[0]);const t=it.reduce((a,[p,n])=>a+p.price*n,0);return it.length?`<h1>ตะกร้า</h1><div class="wrap"><table><tr><th>สินค้า</th><th>ราคา</th><th>จำนวน</th><th></th></tr>${it.map(([p,n])=>`<tr><td>${p.em} ${E(p.name)}</td><td>${M(p.price)}</td><td><input type="number" min="1" max="${p.stock}" value="${n}" data-a="qty" data-id="${p.id}" style="width:80px"></td><td><button class="d" data-a="rm" data-id="${p.id}">ลบ</button></td></tr>`).join('')}</table></div><h2>รวม ${M(t)}</h2><a class="btn o" href="#/checkout">ไปชำระเงิน</a>`:'<h1>ตะกร้า</h1><p>ตะกร้าว่าง <a href="#/">เลือกสินค้า</a></p>'},
+checkout:()=>{if(!need(me))return'';const it=Object.entries(cart).map(([id,n])=>[pf(id),n]).filter(x=>x[0]),t=it.reduce((a,[p,n])=>a+p.price*n,0);return it.length?`<h1>ยืนยันคำสั่งซื้อ</h1><form data-f="order" class="box"><p>${it.map(([p,n])=>`${E(p.name)} × ${n}`).join('<br>')}</p><h2>รวม ${M(t)}</h2><label>ที่อยู่จัดส่ง</label><select name="sel">${me.addrs.map((a,i)=>`<option value="${i}">${E(a)}</option>`).join('')}<option value="new">+ กรอกที่อยู่ใหม่</option></select><textarea name="a" rows="2" placeholder="ที่อยู่ใหม่ (ถ้าเลือกกรอกใหม่)"></textarea><label>วิธีชำระเงิน (จำลอง)</label><select name="pay"><option>โอนเงิน</option><option>เก็บเงินปลายทาง</option></select><p><button class="o">สั่งซื้อ</button></p></form>`:'<p>ตะกร้าว่าง</p>'},
+orders:()=>{if(!need(me))return'';const o=db.orders.filter(o=>o.uid==me.id).reverse();return`<h1>คำสั่งซื้อของฉัน</h1>`+(o.length?o.map(oc).join(''):'<p>ยังไม่มีคำสั่งซื้อ</p>')},
+admin:()=>{if(!ad())return'';const o=db.orders.filter(o=>o.st!='cancel'),days=[...Array(7)].map((_,i)=>{const d=new Date(Date.now()-(6-i)*864e5).toDateString();return[new Date(d).getDate(),o.filter(x=>new Date(x.at).toDateString()==d).reduce((a,x)=>a+x.total,0)]}),mx=Math.max(1,...days.map(d=>d[1])),lo=db.products.filter(p=>p.stock<=p.low);return`<h1>แดชบอร์ด</h1><div class="stats"><div class="card"><b>${M(o.reduce((a,x)=>a+x.total,0))}</b>ยอดขายรวม</div><div class="card"><b>${db.orders.length}</b>ออเดอร์ทั้งหมด</div><div class="card"><b>${db.orders.filter(x=>x.st=='pending').length}</b>รอชำระ</div></div><h2>รายได้ 7 วัน</h2><div class="card"><div class="bars">${days.map(d=>`<div><i style="height:${d[1]/mx*100}px"></i>${d[0]}<br>${d[1]}</div>`).join('')}</div></div><h2>สินค้าใกล้หมด</h2>${lo.map(p=>`<p class="low">${p.em} ${E(p.name)} เหลือ ${p.stock} (เกณฑ์ ${p.low})</p>`).join('')||'<p>ปกติทุกรายการ</p>'}<h2>ออเดอร์ล่าสุด</h2>${db.orders.slice(-5).reverse().map(oc).join('')||'<p>ยังไม่มีออเดอร์</p>'}`},
+'admin/inv':()=>{if(!ad())return'';return`<h1>จัดการสต็อก</h1><form data-f="prod" class="card"><input type="hidden" name="id"><div class="row"><input name="name" placeholder="ชื่อสินค้า" required><select name="cat">${CATS.map(c=>`<option>${c}</option>`).join('')}</select><input name="em" placeholder="อีโมจิ" value="💊" style="max-width:90px"></div><div class="row"><input name="price" type="number" min="0" placeholder="ราคา" required><input name="stock" type="number" min="0" placeholder="สต็อก" required><input name="low" type="number" min="0" placeholder="เกณฑ์แจ้งเตือน" value="5" required></div><input name="desc" placeholder="รายละเอียด"><p><button>บันทึกสินค้า</button> <button type="reset" class="s">ล้างฟอร์ม</button></p></form><div class="wrap"><table><tr><th>สินค้า</th><th>ราคา</th><th>สต็อก</th><th></th></tr>${db.products.map(p=>`<tr><td>${p.em} ${E(p.name)}</td><td>${M(p.price)}</td><td class="${p.stock<=p.low?'low':''}">${p.stock}${p.stock<=p.low?' ⚠':''} <button class="s" data-a="adj" data-id="${p.id}" data-v="-1">−</button><button class="s" data-a="adj" data-id="${p.id}" data-v="1">+</button></td><td><button class="s" data-a="edit" data-id="${p.id}">แก้ไข</button> <button class="d" data-a="delp" data-id="${p.id}">ลบ</button></td></tr>`).join('')}</table></div>`},
+'admin/orders':()=>{if(!ad())return'';return`<h1>จัดการออเดอร์</h1>`+(db.orders.slice().reverse().map(o=>oc(o,1)).join('')||'<p>ยังไม่มีออเดอร์</p>')}};
+const ad=()=>me?.role=='admin'||(location.hash='#/',toast('เฉพาะแอดมิน'),false);
+const oc=(o,a)=>`<div class="card" style="margin-bottom:10px"><b>#${o.id}</b> · ${new Date(o.at).toLocaleString('th-TH')} · <span class="tag">${ST[o.st]}</span><br>${o.items.map(i=>`${E(i.name)} × ${i.n}`).join(', ')}<br><b>${M(o.total)}</b> · ${o.pay}<br><span class="mut">${E(o.addr)}${a?' · '+E(db.users.find(u=>u.id==o.uid)?.email):''}</span>${a?`<p><select data-a="st" data-id="${o.id}">${Object.entries(ST).map(([k,v])=>`<option value="${k}" ${o.st==k?'selected':''}>${v}</option>`).join('')}</select></p>`:''}</div>`;
+function R(){nav();const p=location.hash.slice(2).split('/');let k=p.join('/'),arg;if(p[0]=='p'){k='p';arg=p[1]}$('#app').innerHTML=(V[k]||V[''])(arg);scrollTo(0,0)}
+addEventListener('hashchange',R);
+document.addEventListener('input',e=>{if(e.target.id=='q'){q=e.target.value;$('#list').innerHTML=list()}});
+document.addEventListener('change',e=>{const t=e.target,a=t.dataset.a,id=+t.dataset.id;if(a=='qty'){const p=pf(id);cart[id]=Math.max(1,Math.min(p.stock,+t.value||1));sv();R()}
+if(a=='st'){const o=db.orders.find(o=>o.id==id);if(t.value=='cancel'&&o.st!='cancel')o.items.forEach(i=>{const p=pf(i.pid);if(p)p.stock+=i.n});if(o.st=='cancel'&&t.value!='cancel'){if(o.items.some(i=>(pf(i.pid)?.stock||0)<i.n)){toast('สต็อกไม่พอสำหรับเปิดออเดอร์ใหม่');return R()}o.items.forEach(i=>pf(i.pid).stock-=i.n)}o.st=t.value;sv();toast('อัปเดตสถานะแล้ว');R()}});
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t||t.tagName=='INPUT'||t.tagName=='SELECT')return;const a=t.dataset.a,id=+t.dataset.id;
+if(a=='cat'){cat=t.dataset.v;R()}
+if(a=='add'){const p=pf(id);if((cart[id]||0)+1>p.stock)return toast('สต็อกไม่พอ');cart[id]=(cart[id]||0)+1;sv();nav();toast('เพิ่มลงตะกร้าแล้ว')}
+if(a=='rm'){delete cart[id];sv();R()}
+if(a=='out'){e.preventDefault();delete localStorage.vm_me;me=null;location.hash='#/';R()}
+if(a=='deladdr'){me.addrs.splice(id,1);sv();R()}
+if(a=='adj'){const p=pf(id);p.stock=Math.max(0,p.stock+ +t.dataset.v);sv();R()}
+if(a=='delp'&&confirm('ลบสินค้านี้?')){db.products=db.products.filter(p=>p.id!=id);delete cart[id];sv();R()}
+if(a=='edit'){const f=$('[data-f=prod]'),p=pf(id);for(const k in p)if(f.elements[k])f.elements[k].value=p[k];f.elements.id.value=p.id;scrollTo(0,0)}});
+document.addEventListener('submit',async e=>{e.preventDefault();const f=e.target,k=f.dataset.f,d=Object.fromEntries(new FormData(f));
+if(k=='reg'){const em=d.email.trim().toLowerCase();if(db.users.some(u=>u.email==em))return toast('อีเมลนี้ถูกใช้แล้ว');const u={id:db.seq.u++,name:d.name.trim(),email:em,pw:await sha(d.pw),role:'customer',addrs:[]};db.users.push(u);sv();localStorage.vm_me=u.id;me=u;toast('สมัครสมาชิกสำเร็จ');location.hash='#/'}
+if(k=='login'){const u=db.users.find(u=>u.email==d.email.trim().toLowerCase());if(!u||u.pw!=await sha(d.pw))return toast('อีเมลหรือรหัสผ่านไม่ถูกต้อง');localStorage.vm_me=u.id;me=u;location.hash=u.role=='admin'?'#/admin':'#/'}
+if(k=='prof'){me.name=d.name.trim();sv();toast('บันทึกแล้ว')}
+if(k=='addr'){me.addrs.push(d.a.trim());sv()}
+if(k=='order'){const it=Object.entries(cart).map(([id,n])=>[pf(id),n]);const bad=it.find(([p,n])=>!p||p.stock<n);if(bad)return toast('สต็อกไม่พอ: '+(bad[0]?.name||'สินค้าถูกลบ'));const addr=d.sel=='new'||d.sel==null?d.a.trim():me.addrs[d.sel];if(!addr)return toast('กรุณากรอกที่อยู่จัดส่ง');if(d.sel=='new'&&d.a.trim())me.addrs.push(addr);
+it.forEach(([p,n])=>p.stock-=n);const o={id:db.seq.o++,uid:me.id,items:it.map(([p,n])=>({pid:p.id,name:p.name,price:p.price,n})),total:it.reduce((a,[p,n])=>a+p.price*n,0),addr,pay:d.pay,st:'pending',at:Date.now()};db.orders.push(o);cart={};sv();toast('สั่งซื้อสำเร็จ #'+o.id);location.hash='#/orders'}
+if(k=='prod'){const o={name:d.name.trim(),cat:d.cat,em:d.em||'💊',price:+d.price,stock:+d.stock,low:+d.low,desc:d.desc};if(d.id)Object.assign(pf(d.id),o);else db.products.push({id:db.seq.p++,...o});sv();toast('บันทึกสินค้าแล้ว')}
+R()});
+init();
+</script></body></html>
